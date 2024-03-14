@@ -13,6 +13,8 @@ contract XProofOfVoteNFT is ERC721, CustomChanIbcApp {
 
     string tokenURIPolyVote;
 
+    event MintedOnRecv(bytes32 channelId, uint64 sequence, address indexed recipient, uint256 voteNFTId);
+
     constructor(IbcDispatcher _dispatcher, string memory _tokenURIPolyVote) 
     CustomChanIbcApp(_dispatcher) ERC721("ProofOfVoteNFT", "Polymeranian"){
         tokenURIPolyVote = _tokenURIPolyVote;
@@ -43,11 +45,15 @@ contract XProofOfVoteNFT is ERC721, CustomChanIbcApp {
     // This contract only receives packets from the IBC dispatcher
 
     function onRecvPacket(IbcPacket memory packet) external override onlyIbcDispatcher returns (AckPacket memory ackPacket) {
+        // Decode the packet data
         (address decodedVoter, address decodedRecipient) = abi.decode(packet.data, (address, address));
 
-        uint256 voteNFTId = mint(decodedRecipient);
+        // Mint the NFT
+        uint256 voteNFTid = mint(decodedRecipient);
+        emit MintedOnRecv(packet.dest.channelId, packet.sequence, decodedRecipient, voteNFTid);
 
-        bytes memory ackData = abi.encode(decodedVoter, voteNFTId);
+        // Encode the ack data
+        bytes memory ackData = abi.encode(decodedVoter, voteNFTid);
 
         return AckPacket(true, ackData);
     }
