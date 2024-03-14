@@ -181,7 +181,7 @@ contract XBallot is CustomChanIbcApp {
         address recipient
     ) external {
         Voter storage voter = voters[voterAddress];
-        require(voter.ibcPacketStatus == (IbcPacketStatus.UNSENT || IbcPacketStatus.TIMEOUT), "An IBC packet relating to his vote has already been sent. Wait for acknowledgement.");
+        require(voter.ibcPacketStatus == IbcPacketStatus.UNSENT || voter.ibcPacketStatus == IbcPacketStatus.TIMEOUT, "An IBC packet relating to his vote has already been sent. Wait for acknowledgement.");
 
         uint voteId = voter.vote;
         bytes memory payload = abi.encode(voterAddress, recipient);

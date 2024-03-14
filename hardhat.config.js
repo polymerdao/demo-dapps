@@ -26,7 +26,7 @@ module.exports = {
     },
     // for OP testnet
     'optimism': {
-      url: 'https://sepolia.optimsm.io',
+      url: 'https://sepolia.optimism.io',
       accounts: [
         process.env.PRIVATE_KEY_1,
         process.env.PRIVATE_KEY_2,

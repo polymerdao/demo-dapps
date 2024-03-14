@@ -1,42 +1,42 @@
 {
-    "proofsEnabled": false,
-    "deploy": {
-      "optimism": "XCounterUC",
-      "base": "XCounterUC"
+  "proofsEnabled": false,
+  "deploy": {
+    "optimism": "XBallot",
+    "base": "XProofOfVoteNFT"
+  },
+  "isUniversal": false,
+  "createChannel": {
+    "srcChain": "optimism",
+    "srcAddr": "0x2f7297702F5c5A5F81D92955915a7ECAFCE1D7F5",
+    "dstChain": "base",
+    "dstAddr": "0xb9E6ff2C41988835FfF92396169eD0011B727154",
+    "version": "1.0",
+    "ordering": 0,
+    "fees": false
+  },
+  "sendPacket": {
+    "optimism": {
+      "portAddr": "0x2f7297702F5c5A5F81D92955915a7ECAFCE1D7F5",
+      "channelId": "channel-37064",
+      "timeout": 36000
     },
-    "isUniversal": true,
-    "createChannel": {
-      "srcChain": "optimism",
-      "srcAddr": "0x1234567890AbCdEf1234567890aBcDeF12345678",
-      "dstChain": "base",
-      "dstAddr": "0x1234567890AbCdEf1234567890aBcDeF12345678",
-      "version": "1.0",
-      "ordering": 0,
-      "fees": false
+    "base": {
+      "portAddr": "0xb9E6ff2C41988835FfF92396169eD0011B727154",
+      "channelId": "channel-37065",
+      "timeout": 36000
+    }
+  },
+  "sendUniversalPacket": {
+    "optimism": {
+      "portAddr": "0x1234567890abcdef1234567890abcdef12345678",
+      "channelId": "channel-x",
+      "timeout": 36000
     },
-    "sendPacket": {
-      "optimism": {
-        "portAddr": "0x1234567890abcdef1234567890abcdef12345678",
-        "channelId": "channel-n",
-        "timeout": 36000
-      },
-      "base": {
-        "portAddr": "0x1234567890abcdef1234567890abcdef12345678",
-        "channelId": "channel-n",
-        "timeout": 36000
-      }
-    },
-    "sendUniversalPacket": {
-      "optimism": {
-        "portAddr": "0x1234567890abcdef1234567890abcdef12345678",
-        "channelId": "channel-x",
-        "timeout": 36000
-      },
-      "base": {
-        "portAddr": "0x1234567890abcdef1234567890abcdef12345678",
-        "channelId": "channel-y",
-        "timeout": 36000
-      }
-    },
-    "backup": {}
-  }
+    "base": {
+      "portAddr": "0x1234567890abcdef1234567890abcdef12345678",
+      "channelId": "channel-y",
+      "timeout": 36000
+    }
+  },
+  "backup": {}
+}
