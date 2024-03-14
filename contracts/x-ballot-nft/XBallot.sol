@@ -10,13 +10,15 @@ import '../base/CustomChanIbcApp.sol';
  * and ability to send cross-chain instruction to mint NFT on counterparty
  */
 contract XBallot is CustomChanIbcApp {
+    enum IbcPacketStatus {UNSENT, SENT, ACKED, TIMEOUT}
+
     struct Voter {
         uint weight; // weight is accumulated by delegation
         bool voted;  // if true, that person already voted;    
         address delegate; // person delegated to
         uint vote;   // index of the voted proposal
         // additional
-        bool ibcNFTMinted; // if true, we've gotten an ack for the IBC packet and cannot attempt to send it again;  TODO: implement enum to account for pending state
+        IbcPacketStatus ibcPacketStatus;
     }
 
     struct Proposal {
@@ -37,8 +39,12 @@ contract XBallot is CustomChanIbcApp {
         _;
     }
 
+    event Voted(address indexed voter, uint proposal);  // Exposing the vote information for debugging; hide in production if you want private voting
+    event SendVoteInfo(bytes32 channel, uint64 timeoutTimestamp, address indexed voter, address indexed recipient, uint voteId);
+
     /** 
-     * @dev Create a new ballot to choose one of 'proposalNames'.
+     * @dev Create a new ballot to choose one of 'proposalNames' and make it IBC enabled to send proof of Vote to counterparty
+     * @param _dispatcher vIBC dispatcher contract
      * @param proposalNames names of proposals
      */
     constructor( IbcDispatcher _dispatcher, bytes32[] memory proposalNames) CustomChanIbcApp(_dispatcher) {
@@ -65,6 +71,7 @@ contract XBallot is CustomChanIbcApp {
             msg.sender == chairperson,
             "Only chairperson can give right to vote."
         );
+        // @dev Commenting this out for testing purposes
         // require(
         //     !voters[voter].voted,
         //     "The voter already voted."
@@ -119,6 +126,8 @@ contract XBallot is CustomChanIbcApp {
         // this will throw automatically and revert all
         // changes.
         proposals[proposal].voteCount += sender.weight;
+
+        emit Voted(msg.sender, proposal);
     }
 
 
@@ -150,7 +159,7 @@ contract XBallot is CustomChanIbcApp {
     // Utility functions
 
     function resetVoter(address voterAddr) external onlyChairperson {
-        voters[voterAddr].ibcNFTMinted = false;
+        voters[voterAddr].ibcPacketStatus = IbcPacketStatus.UNSENT;
         voters[voterAddr].voted = false;
         voters[voterAddr].vote = 0;
         voters[voterAddr].weight = 0;
@@ -171,14 +180,18 @@ contract XBallot is CustomChanIbcApp {
         address voterAddress,
         address recipient
     ) external {
-        require(voters[voterAddress].ibcNFTMinted == false, "Already has a ProofOfVote NFT minted on counterparty");
+        Voter storage voter = voters[voterAddress];
+        require(voter.ibcPacketStatus == (IbcPacketStatus.UNSENT || IbcPacketStatus.TIMEOUT), "An IBC packet relating to his vote has already been sent. Wait for acknowledgement.");
 
-        uint voteId = voters[voterAddress].vote;
-        bytes memory payload = abi.encode(voterAddress, recipient, voteId);
+        uint voteId = voter.vote;
+        bytes memory payload = abi.encode(voterAddress, recipient);
 
         uint64 timeoutTimestamp = uint64((block.timestamp + timeoutSeconds) * 1000000000);
 
         dispatcher.sendPacket(channelId, payload, timeoutTimestamp);
+        voter.ibcPacketStatus = IbcPacketStatus.SENT;
+
+        emit SendVoteInfo(channelId, timeoutTimestamp, voterAddress, recipient, voteId);
     }
 
     function onRecvPacket(IbcPacket memory) external override view onlyIbcDispatcher returns (AckPacket memory ackPacket) {
@@ -192,7 +205,7 @@ contract XBallot is CustomChanIbcApp {
         
         // decode the ack data, find the address of the voter the packet belongs to and set ibcNFTMinted true
         (address voterAddress, uint256 voteNFTId) = abi.decode(ack.data, (address, uint256));
-        voters[voterAddress].ibcNFTMinted = true;
+        voters[voterAddress].ibcPacketStatus = IbcPacketStatus.ACKED;
     }
 
     function onTimeoutPacket(IbcPacket calldata packet) external override onlyIbcDispatcher {

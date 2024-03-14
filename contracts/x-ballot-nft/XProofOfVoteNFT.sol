@@ -43,7 +43,7 @@ contract XProofOfVoteNFT is ERC721, CustomChanIbcApp {
     // This contract only receives packets from the IBC dispatcher
 
     function onRecvPacket(IbcPacket memory packet) external override onlyIbcDispatcher returns (AckPacket memory ackPacket) {
-        (address decodedVoter, address decodedRecipient, uint decodedVoteId) = abi.decode(packet.data, (address, address, uint));
+        (address decodedVoter, address decodedRecipient) = abi.decode(packet.data, (address, address));
 
         uint256 voteNFTId = mint(decodedRecipient);
 
