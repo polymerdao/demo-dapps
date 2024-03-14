@@ -19,14 +19,18 @@ module.exports = {
     'base': {
       url: 'https://sepolia.base.org',
       accounts: [
-        process.env.PRIVATE_KEY_1
+        process.env.PRIVATE_KEY_1,
+        process.env.PRIVATE_KEY_2,
+        process.env.PRIVATE_KEY_3
       ],
     },
     // for OP testnet
     'optimism': {
-      url: 'https://sepolia.optimism.io',
+      url: 'https://sepolia.optimsm.io',
       accounts: [
-        process.env.PRIVATE_KEY_1
+        process.env.PRIVATE_KEY_1,
+        process.env.PRIVATE_KEY_2,
+        process.env.PRIVATE_KEY_3
       ],
     },    
   },
