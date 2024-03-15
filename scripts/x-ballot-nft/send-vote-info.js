@@ -17,17 +17,19 @@ async function main() {
     // Get the contract type from the config and get the contract
     const ibcApp = await getIbcApp(networkName);
 
-    const voterAddress = accounts[1].address;
-    const recipient = voterAddress;
+    // Change if your want to send a vote from a different address
+    const voteAccount = accounts[2];
 
     // console.log(`Casting a vote from address: ${voterAddress}`);
-    await ibcApp.connect(accounts[1]).vote(1);
+    await ibcApp.connect(voteAccount).vote(1);
     // console.log("Vote cast");
 
     // Do logic to prepare the packet
     const channelId = sendConfig[`${networkName}`]["channelId"];
     const channelIdBytes = hre.ethers.encodeBytes32String(channelId);
     const timeoutSeconds = sendConfig[`${networkName}`]["timeout"];
+    const voterAddress = voteAccount.address;
+    const recipient = voterAddress;
     
     // Send the packet
     // console.log(`Sending a packet via IBC to mint an NFT for ${recipient} related to vote from ${voterAddress}`);
