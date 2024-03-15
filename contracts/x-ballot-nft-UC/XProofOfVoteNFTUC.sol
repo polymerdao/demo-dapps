@@ -25,7 +25,7 @@ contract XProofOfVoteNFTUC is ERC721, UniversalChanIbcApp {
     }
 
     function mint(address recipient)
-        public
+        internal
         returns (uint256)
     {
         currentTokenId.increment();

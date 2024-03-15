@@ -23,7 +23,7 @@ contract XProofOfVoteNFT is ERC721, CustomChanIbcApp {
     }
 
     function mint(address recipient)
-        public
+        internal
         returns (uint256)
     {
         currentTokenId.increment();
