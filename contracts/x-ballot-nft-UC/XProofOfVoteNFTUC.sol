@@ -16,7 +16,7 @@ contract XProofOfVoteNFTUC is ERC721, UniversalChanIbcApp {
     string baseURI;
     string private suffix = "/500/500";
 
-    event MintedOnRecv(bytes32 srcPortAddr, address indexed recipient, uint256 voteNFTId);
+    event MintedOnRecv(address srcPortAddr, address indexed recipient, uint256 voteNFTId);
 
     constructor(address _middleware, string memory _baseURI) 
         ERC721("UniversalProofOfVoteNFT", "PolyVoteUniversal")
@@ -57,7 +57,7 @@ contract XProofOfVoteNFTUC is ERC721, UniversalChanIbcApp {
 
         // Mint the NFT
         uint256 voteNFTid = mint(decodedRecipient);
-        emit MintedOnRecv(packet.srcPortAddr, decodedRecipient, voteNFTid);
+        emit MintedOnRecv(IbcUtils.toAddress(packet.srcPortAddr), decodedRecipient, voteNFTid);
 
         // Encode the ack data
         bytes memory ackData = abi.encode(decodedVoter, voteNFTid);

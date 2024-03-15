@@ -36,8 +36,8 @@ contract XBallotUC is UniversalChanIbcApp {
     }
 
     event Voted(address indexed voter, uint proposal);  // Exposing the vote information for debugging; hide in production if you want private voting
-    event SendVoteInfo(bytes32 channelId, address indexed voter, address indexed recipient, uint proposal);
-    event AckNFTMint(bytes32 channelId, address indexed voter, uint voteNFTid);
+    event SendVoteInfo(address indexed destPortAddr, address indexed voter, address indexed recipient, uint proposal);
+    event AckNFTMint(address indexed destPortAddr, address indexed voter, uint voteNFTid);
 
 
     constructor(address _middleware, bytes32[] memory proposalNames) UniversalChanIbcApp(_middleware) {
@@ -182,7 +182,7 @@ contract XBallotUC is UniversalChanIbcApp {
         );
         voter.ibcPacketStatus = IbcPacketStatus.SENT;
 
-        emit SendVoteInfo(channelId, voterAddress, recipient, propsoal);
+        emit SendVoteInfo(destPortAddr, voterAddress, recipient, propsoal);
     }
 
     function onRecvUniversalPacket(
@@ -206,7 +206,7 @@ contract XBallotUC is UniversalChanIbcApp {
         voters[voterAddress].ibcPacketStatus = IbcPacketStatus.ACKED;
         voters[voterAddress].voteNFTIds.push(voteNFTid);
 
-        emit AckNFTMint(channelId, voterAddress, voteNFTid);
+        emit AckNFTMint(IbcUtils.toAddress(packet.destPortAddr), voterAddress, voteNFTid);
     }
 
     function onTimeoutUniversalPacket(

@@ -1,7 +1,8 @@
 const { exec } = require("child_process");
-const {getConfigPath, getWhitelistedNetworks} = require('../private/_helpers.js');
-const { setupIbcPacketEventListener } = require('../private/_events.js');
-const { setupXBallotNFTEventListener } = require('./_app-events.js');
+const {getConfigPath, getWhitelistedNetworks} = require('./_helpers.js');
+const { setupIbcPacketEventListener } = require('./_events.js');
+const { setupXBallotNFTEventListener } = require('../x-ballot-nft/_app-events.js');
+const { setupUcXBallotNFTEventListener } = require('../x-ballot-nft/_app-events-UC.js');
 
 function runSendPacketCommand(command) {
   return new Promise((resolve, reject) => {
@@ -32,7 +33,14 @@ async function runSendPacket(config) {
 
   try {
     await setupIbcPacketEventListener();
-    await setupXBallotNFTEventListener();
+    if (config.isUniversal) {
+      await setupUcXBallotNFTEventListener();
+    } else if (!config.isUniversal) {
+      await setupXBallotNFTEventListener();
+    } else {
+      console.error("❌ Invalid config value for isUniversal. Please check your config file.");
+      process.exit(1);
+    }
     await runSendPacketCommand(command);
   } catch (error) {
     console.error("❌ Error sending packet: ", error);

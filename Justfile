@@ -67,7 +67,7 @@ send-packet SOURCE:
 # Usage: just send-packet [source]
 send-vote-info:
     echo "Sending an IBC packet with vote information to mint a Proof-of-Vote NFT..."
-    node scripts/x-ballot-nft/_send-vote-info-config.js
+    node scripts/private/_send-vote-info-config.js
 
 # Switch between the sim client and the client with proofs
 # Usage: just switch-client
