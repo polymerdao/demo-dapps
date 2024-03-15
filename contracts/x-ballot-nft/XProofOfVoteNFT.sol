@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 import '../base/CustomChanIbcApp.sol';
 
@@ -34,40 +35,11 @@ contract XProofOfVoteNFT is ERC721, CustomChanIbcApp {
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
 
-        return string(abi.encodePacked(baseURI, uint2str(tokenId), suffix));
+        return string(abi.encodePacked(baseURI, Strings.toString(tokenId), suffix));
     }
 
     function updateBaseURI(string memory _newBaseURI) public {
         baseURI = _newBaseURI;
-    }
-
-    /**
-     * Converts a uint256 to a string.
-     * @dev This function is used because Solidity doesn't provide a native way to convert
-     * uint256 to strings directly in a way that's needed for concatenation.
-     * @param _i The integer to convert.
-     * @return string The integer as a string.
-     */
-    function uint2str(uint256 _i) internal pure returns (string memory) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint256 j = _i;
-        uint256 length;
-        while (j != 0) {
-            length++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(length);
-        uint256 k = length;
-        while (_i != 0) {
-            k = k-1;
-            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
     }
 
     // IBC methods
