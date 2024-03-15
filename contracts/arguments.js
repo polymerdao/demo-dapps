@@ -11,6 +11,6 @@ module.exports = {
         ]
     ],
     "XProofOfVoteNFT": [
-        'https://ipfs.io/ipfs/QmQEVVLJUR1WLN15S49rzDJsSP7za9DxeqpUzWuG4aondg'
+        'https://picsum.photos/id/'
     ]
 };
