@@ -28,7 +28,6 @@ function listenForBallotEvents(network, ballot) {
     ballot.on("SendVoteInfo", (destPortAddr, voter, recipient, proposal, event ) => {
         const txHash = event.log.transactionHash;
         const url = `${explorerUrl}tx/${txHash}`;
-        const channelIdString = hre.ethers.decodeBytes32String(channelId);
         console.log(`
           -------------------------------------------
           📦🗳️  Vote Info Sent !!!   🗳️📦
