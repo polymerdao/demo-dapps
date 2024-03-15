@@ -33,9 +33,9 @@ async function runSendPacket(config) {
 
   try {
     await setupIbcPacketEventListener();
-    if (config.isUniversal) {
+    if (config.isUniversal === true) {
       await setupUcXBallotNFTEventListener();
-    } else if (!config.isUniversal) {
+    } else if (config.isUniversal === false) {
       await setupXBallotNFTEventListener();
     } else {
       console.error("❌ Invalid config value for isUniversal. Please check your config file.");
