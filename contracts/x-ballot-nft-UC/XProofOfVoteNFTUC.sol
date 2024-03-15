@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 
 import '../base/UniversalChanIbcApp.sol';
 
@@ -11,12 +13,15 @@ contract XProofOfVoteNFTUC is ERC721, UniversalChanIbcApp {
     using Counters for Counters.Counter;
     Counters.Counter private currentTokenId;
 
-    string tokenURIPolyVote;
+    string baseURI;
+    string private suffix = "/500/500";
 
-    constructor(address _middleware, string memory _tokenURIPolyVote) 
-        ERC721("UniversalProofOfVoteNFT", "Polymeranian2")
+    event MintedOnRecv(bytes32 srcPortAddr, address indexed recipient, uint256 voteNFTId);
+
+    constructor(address _middleware, string memory _baseURI) 
+        ERC721("UniversalProofOfVoteNFT", "PolyVoteUniversal")
         UniversalChanIbcApp(_middleware) {
-            tokenURIPolyVote = _tokenURIPolyVote;
+            baseURI = _baseURI;
     }
 
     function mint(address recipient)
@@ -32,11 +37,11 @@ contract XProofOfVoteNFTUC is ERC721, UniversalChanIbcApp {
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
 
-        return tokenURIPolyVote;
+        return string(abi.encodePacked(baseURI, Strings.toString(tokenId), suffix));
     }
 
-    function updateTokenURI(string memory _newTokenURI) public {
-        tokenURIPolyVote = _newTokenURI;
+    function updateTokenURI(string memory _newBaseURI) public {
+        baseURI = _newBaseURI;
     }
 
     // IBC methods
@@ -47,27 +52,31 @@ contract XProofOfVoteNFTUC is ERC721, UniversalChanIbcApp {
     ) external override onlyIbcMw returns (AckPacket memory ackPacket) {
         recvedPackets.push(UcPacketWithChannel(channelId, packet));
 
-        (address decodedVoter, address decodedRecipient, uint decodedVoteId) = abi.decode(packet.appData, (address, address, uint));
+        // Decode the packet data
+        (address decodedVoter, address decodedRecipient) = abi.decode(packet.appData, (address, address));
 
-        uint256 voteNFTId = mint(decodedRecipient);
+        // Mint the NFT
+        uint256 voteNFTid = mint(decodedRecipient);
+        emit MintedOnRecv(packet.srcPortAddr, decodedRecipient, voteNFTid);
 
-        bytes memory ackData = abi.encode(decodedVoter, voteNFTId);
+        // Encode the ack data
+        bytes memory ackData = abi.encode(decodedVoter, voteNFTid);
 
         return AckPacket(true, ackData);
     }
 
     function onUniversalAcknowledgement(
-            bytes32 channelId,
-            UniversalPacket memory packet,
-            AckPacket calldata ack
-    ) external override onlyIbcMw {
+            bytes32,
+            UniversalPacket memory,
+            AckPacket calldata
+    ) external override view onlyIbcMw {
         require(false, "This function should not be called");
     }
 
     function onTimeoutUniversalPacket(
-        bytes32 channelId, 
-        UniversalPacket calldata packet
-    ) external override onlyIbcMw {
+        bytes32, 
+        UniversalPacket calldata
+    ) external override view onlyIbcMw {
         require(false, "This function should not be called");
     }
 }

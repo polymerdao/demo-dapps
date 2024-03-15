@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 import '../base/UniversalChanIbcApp.sol';
 
 contract XBallotUC is UniversalChanIbcApp {
+    enum IbcPacketStatus {UNSENT, SENT, ACKED, TIMEOUT}
 
     struct Voter {
         uint weight; // weight is accumulated by delegation
@@ -12,7 +13,8 @@ contract XBallotUC is UniversalChanIbcApp {
         address delegate; // person delegated to
         uint vote;   // index of the voted proposal
         // additional
-        bool ibcNFTMinted; // if true, we've gotten an ack for the IBC packet and cannot attempt to send it again;  TODO: implement enum to account for pending state
+        IbcPacketStatus ibcPacketStatus;
+        uint[] voteNFTIds;    
     }
 
     struct Proposal {
@@ -33,7 +35,12 @@ contract XBallotUC is UniversalChanIbcApp {
         _;
     }
 
-    constructor(bytes32[] memory proposalNames, address _middleware) UniversalChanIbcApp(_middleware) {
+    event Voted(address indexed voter, uint proposal);  // Exposing the vote information for debugging; hide in production if you want private voting
+    event SendVoteInfo(bytes32 channelId, address indexed voter, address indexed recipient, uint proposal);
+    event AckNFTMint(bytes32 channelId, address indexed voter, uint voteNFTid);
+
+
+    constructor(address _middleware, bytes32[] memory proposalNames) UniversalChanIbcApp(_middleware) {
         chairperson = msg.sender;
         voters[chairperson].weight = 1;
 
@@ -57,10 +64,10 @@ contract XBallotUC is UniversalChanIbcApp {
             msg.sender == chairperson,
             "Only chairperson can give right to vote."
         );
-        // require(
-        //     !voters[voter].voted,
-        //     "The voter already voted."
-        // );
+        require(
+            !voters[voter].voted,
+            "The voter already voted."
+        );
         require(voters[voter].weight == 0);
         voters[voter].weight = 1;
     }
@@ -101,9 +108,12 @@ contract XBallotUC is UniversalChanIbcApp {
     function vote(uint proposal) public {
         Voter storage sender = voters[msg.sender];
         // FOR TESTING ONLY
+        // ----------------
         sender.weight = 1;
+        sender.ibcPacketStatus = IbcPacketStatus.UNSENT;
         require(sender.weight != 0, "Has no right to vote");
         // require(!sender.voted, "Already voted.");
+        // ----------------
         sender.voted = true;
         sender.vote = proposal;
 
@@ -139,15 +149,6 @@ contract XBallotUC is UniversalChanIbcApp {
     {
         winnerName_ = proposals[winningProposal()].name;
     }
-    
-    // Utility functions
-
-    function resetVoter(address voterAddr) external onlyChairperson {
-        voters[voterAddr].ibcNFTMinted = false;
-        voters[voterAddr].voted = false;
-        voters[voterAddr].vote = 0;
-        voters[voterAddr].weight = 0;
-    }  
 
     /**
      * @dev Sends a packet with a greeting message over a specified channel.
@@ -165,25 +166,29 @@ contract XBallotUC is UniversalChanIbcApp {
         address voterAddress,
         address recipient
         ) external {
-        require(voters[voterAddress].ibcNFTMinted == false, "Already has a ProofOfVote NFT minted on counterparty");
+        Voter storage voter = voters[voterAddress];
+        require(voter.ibcPacketStatus == IbcPacketStatus.UNSENT || voter.ibcPacketStatus == IbcPacketStatus.TIMEOUT, "An IBC packet relating to his vote has already been sent. Wait for acknowledgement.");
 
-        uint voteId = voters[voterAddress].vote;
-        bytes memory payload = abi.encode(voterAddress, recipient, voteId);
+        uint propsoal = voter.vote;
+        bytes memory payload = abi.encode(voterAddress, recipient);
 
         uint64 timeoutTimestamp = uint64((block.timestamp + timeoutSeconds) * 1000000000);
 
         IbcUniversalPacketSender(mw).sendUniversalPacket(
             channelId,
-            IbcUtils.toBytes32(address(this)),
+            IbcUtils.toBytes32(destPortAddr),
             payload,
             timeoutTimestamp
         );
+        voter.ibcPacketStatus = IbcPacketStatus.SENT;
+
+        emit SendVoteInfo(channelId, voterAddress, recipient, propsoal);
     }
 
     function onRecvUniversalPacket(
-        bytes32 channelId,
+        bytes32,
         UniversalPacket calldata
-    ) external override onlyIbcMw returns (AckPacket memory ackPacket) {
+    ) external override view onlyIbcMw returns (AckPacket memory ackPacket) {
         require(false, "This function should not be called");
 
         return AckPacket(true, abi.encode("Error: This function should not be called"));
@@ -194,18 +199,14 @@ contract XBallotUC is UniversalChanIbcApp {
             UniversalPacket memory packet,
             AckPacket calldata ack
     ) external override onlyIbcMw {
-        // verify packet's destPortAddr is the ack's first encoded address. assumes the packet's destPortAddr is the address of the contract that sent the packet
-        // check onRecvUniversalPacket for the encoded ackpacket data
-        require(ack.data.length >= 20, 'ack data too short');
-        address ackSender = address(bytes20(ack.data[0:20]));
-        require(IbcUtils.toAddress(packet.destPortAddr) == ackSender, 'ack address mismatch');
         ackPackets.push(UcAckWithChannel(channelId, packet, ack));
 
-        bytes memory usefulAckData = ack.data[20:];
-
         // decode the ack data, find the address of the voter the packet belongs to and set ibcNFTMinted true
-        (address voterAddress, uint256 voteNFTId) = abi.decode(usefulAckData, (address, uint256));
-        voters[voterAddress].ibcNFTMinted = true;
+        (address voterAddress, uint256 voteNFTid) = abi.decode(ack.data, (address, uint256));
+        voters[voterAddress].ibcPacketStatus = IbcPacketStatus.ACKED;
+        voters[voterAddress].voteNFTIds.push(voteNFTid);
+
+        emit AckNFTMint(channelId, voterAddress, voteNFTid);
     }
 
     function onTimeoutUniversalPacket(

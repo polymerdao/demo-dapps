@@ -117,10 +117,12 @@ contract XBallot is CustomChanIbcApp {
     function vote(uint proposal) public {
         Voter storage sender = voters[msg.sender];
         // FOR TESTING ONLY
+        // ----------------
         sender.weight = 1;
         sender.ibcPacketStatus = IbcPacketStatus.UNSENT;
         require(sender.weight != 0, "Has no right to vote");
         // require(!sender.voted, "Already voted.");
+        // ----------------
         sender.voted = true;
         sender.vote = proposal;
 
@@ -191,7 +193,7 @@ contract XBallot is CustomChanIbcApp {
     function onRecvPacket(IbcPacket memory) external override view onlyIbcDispatcher returns (AckPacket memory ackPacket) {
         require(false, "This function should not be called");
 
-        return AckPacket(true, abi.encode("This function should not be called"));
+        return AckPacket(true, abi.encode("Error: This function should not be called"));
     }
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override onlyIbcDispatcher {
