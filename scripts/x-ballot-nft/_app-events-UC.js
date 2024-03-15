@@ -68,7 +68,7 @@ async function setupUcXBallotNFTEventListener() {
     console.log("🔊 Setting up Ballot and NFT event listeners...")
     const config = require(getConfigPath());
 
-    const srcIbcApp = await getIbcApp(config["sendUniversalPacket"]["optimism"]["portAddr"]); // How to get source chain when using universal channels?
+    const srcIbcApp = await getIbcApp("optimism"); // How to get source chain when using universal channels?
     listenForBallotEvents("optimism", srcIbcApp);
 }
 

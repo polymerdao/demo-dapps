@@ -121,6 +121,8 @@ contract XBallotUC is UniversalChanIbcApp {
         // this will throw automatically and revert all
         // changes.
         proposals[proposal].voteCount += sender.weight;
+
+        emit Voted(msg.sender, proposal);
     }
 
 

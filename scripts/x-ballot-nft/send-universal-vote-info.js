@@ -11,7 +11,7 @@ const { getIbcApp } = require('../private/_vibc-helpers.js');
 async function main() {
     const accounts = await hre.ethers.getSigners();
     const config = require(getConfigPath());
-    const sendConfig = config.sendPacket;
+    const sendConfig = config.sendUniversalPacket;
 
     const networkName = hre.network.name;
     // Get the contract type from the config and get the contract
@@ -25,6 +25,7 @@ async function main() {
     // console.log("Vote cast");
 
     // Do logic to prepare the packet
+    const destPortAddr = sendConfig[`${networkName}`]["portAddr"];
     const channelId = sendConfig[`${networkName}`]["channelId"];
     const channelIdBytes = hre.ethers.encodeBytes32String(channelId);
     const timeoutSeconds = sendConfig[`${networkName}`]["timeout"];
@@ -33,7 +34,8 @@ async function main() {
     
     // Send the packet
     // console.log(`Sending a packet via IBC to mint an NFT for ${recipient} related to vote from ${voterAddress}`);
-    await ibcApp.connect(accounts[0]).sendPacket(
+    await ibcApp.connect(accounts[0]).sendUniversalPacket(
+        destPortAddr,
         channelIdBytes,
         timeoutSeconds,
         voterAddress,
